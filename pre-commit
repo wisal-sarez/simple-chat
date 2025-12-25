@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+
+echo "Running pre-commit checks..."
+
+# Determine the repository root
+REPO_ROOT=$(git rev-parse --show-toplevel)
+
+# Navigate to the server directory
+# This assumes the 'server' folder is at the root of the repository
+cd "$REPO_ROOT/server"
+
+echo "1. Checking formatting..."
+# Fails if code is not formatted
+cargo fmt --all -- --check
+
+echo "2. Checking compilation..."
+# Fails if there are compilation errors
+cargo check
+
+echo "3. Checking clippy..."
+# Fails if there are any clippy warnings
+cargo clippy -- -D warnings
+
+echo "4. Running tests..."
+# Fails if tests don't pass
+cargo test
+
+echo "All checks passed! Ready to commit."

@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+
+    - name: Clippy
+      run: cargo clippy -- -D warnings
+
+    - name: Run unit tests
+      run: cargo test
+
+    - name: Build
+      run: cargo build --verbose
+
+    - name: Integration Test
+      run: |
+        # Build binaries to ensure they are ready
+        cargo build --bins
+        
+        # Start server in background
+        # We assume the binary name is 'server' based on Cargo.toml [package] name or [[bin]]
+        # In Cargo.toml: name = "server" -> binary is "server"
+        ./target/debug/server &
+        SERVER_PID=$!
+        
+        echo "Server started with PID $SERVER_PID"
+        
+        # Give the server a moment to bind to the port
+        sleep 2
+        
+        # Run client with input piped to stdin
+        # Expected behavior: Connect, send "Hello CI", send "leave", disconnect.
+        # Usage: client <username> [host] [port]
+        printf "send Hello CI\nleave\n" | ./target/debug/client ci_tester 127.0.0.1 8080
+        
+        CLIENT_EXIT=$?
+        
+        # Cleanup server
+        kill $SERVER_PID || true
+        
+        if [ $CLIENT_EXIT -eq 0 ]; then
+          echo "Integration test passed."
+        else
+          echo "Client exited with error code $CLIENT_EXIT"
+          exit 1
+        fi
