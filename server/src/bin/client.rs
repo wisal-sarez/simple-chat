@@ -2,8 +2,8 @@ use async_std::io::{self, BufReader};
 use async_std::net::TcpStream;
 use async_std::prelude::*;
 use async_std::task;
-use std::env;
 use server::ClientMessage;
+use std::env;
 
 async fn receive_messages(stream: TcpStream) {
     let reader = BufReader::new(stream);
@@ -38,11 +38,17 @@ async fn main() -> io::Result<()> {
     });
 
     let host = env::var("HOST").unwrap_or_else(|_| {
-        args.get(2).map(|s| s.as_str()).unwrap_or("127.0.0.1").to_string()
+        args.get(2)
+            .map(|s| s.as_str())
+            .unwrap_or("127.0.0.1")
+            .to_string()
     });
 
     let port = env::var("PORT").unwrap_or_else(|_| {
-        args.get(3).map(|s| s.as_str()).unwrap_or("8080").to_string()
+        args.get(3)
+            .map(|s| s.as_str())
+            .unwrap_or("8080")
+            .to_string()
     });
 
     let addr = format!("{}:{}", host, port);
