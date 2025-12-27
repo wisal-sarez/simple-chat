@@ -165,5 +165,5 @@ async fn run_server(addr: &str) -> Result<()> {
 /// Currently binds to `127.0.0.1:8080` by default. This could be extended
 /// to accept command-line arguments for configuration.
 fn main() -> Result<()> {
-    task::block_on(run_server("127.0.0.1:8080"))
+    task::block_on(run_server("0.0.0.0:8000"))
 }
